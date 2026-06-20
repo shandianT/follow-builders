@@ -56,6 +56,31 @@
         }
       }
     },
+    "obsidian": {
+      "type": "object",
+      "description": "Optional: also archive each digest to an Obsidian daily note (parallel to IM delivery)",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to append each digest to an Obsidian daily note"
+        },
+        "vaultPath": {
+          "type": "string",
+          "description": "Absolute path to the Obsidian vault root"
+        },
+        "dailyNotesFolder": {
+          "type": "string",
+          "default": "05-Journal",
+          "description": "Folder (relative to vault) holding daily notes named YYYY-MM-DD.md"
+        },
+        "heading": {
+          "type": "string",
+          "default": "## 📡 AI Builders Digest",
+          "description": "Markdown heading the digest is appended under"
+        }
+      }
+    },
     "onboardingComplete": {
       "type": "boolean",
       "default": false,

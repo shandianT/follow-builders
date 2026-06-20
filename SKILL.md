@@ -113,6 +113,30 @@ Add the key to the .env file.
 Set `delivery.method` to `"stdout"`. Tell them: "No problem — just type /ai
 whenever you want your digest. No automatic delivery will be set up."
 
+### Step 3.5: Obsidian Archive (optional)
+
+Ask: "Do you also want each digest archived to an Obsidian daily note?"
+
+This is INDEPENDENT of the delivery method above — the digest is appended to
+today's daily note *in addition to* IM delivery, by writing the file directly
+(works even when Obsidian isn't running, e.g. on a schedule). `obsidian-git`
+will sync it if installed.
+
+If yes, add an `obsidian` block to config.json:
+
+```json
+"obsidian": {
+  "enabled": true,
+  "vaultPath": "/absolute/path/to/your/vault",
+  "dailyNotesFolder": "05-Journal",
+  "heading": "## 📡 AI Builders Digest"
+}
+```
+
+- `vaultPath`: absolute path to the Obsidian vault root.
+- `dailyNotesFolder`: folder (relative to vault) for daily notes named `YYYY-MM-DD.md`; created if missing.
+- `deliver.js` appends the digest under `heading` with a timestamp automatically — no extra step.
+
 ### Step 4: Language
 
 Ask: "What language do you prefer for your digest?"

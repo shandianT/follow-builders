@@ -20,7 +20,7 @@
 //   - "stdout" (default): just prints to terminal
 // ============================================================================
 
-import { readFile } from 'fs/promises';
+import { readFile, writeFile, appendFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
@@ -149,6 +149,43 @@ async function sendEmail(text, apiKey, toEmail) {
   }
 }
 
+// -- Obsidian Archive (append to daily note) ---------------------------------
+
+// Appends the digest to today's Obsidian daily note by writing the file
+// directly. No need for Obsidian to be running, so it also works when the
+// digest is produced on a schedule. obsidian-git (if installed) will sync it.
+async function appendObsidian(text, obs) {
+  const vaultPath = obs.vaultPath;
+  if (!vaultPath) throw new Error('obsidian.vaultPath not set in config.json');
+
+  const folder = obs.dailyNotesFolder || '05-Journal';
+  const heading = obs.heading || '## 📡 AI Builders Digest';
+
+  // Build today's date string YYYY-MM-DD (local time).
+  const now = new Date();
+  const dateStr = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0')
+  ].join('-');
+
+  const dir = join(vaultPath, folder);
+  await mkdir(dir, { recursive: true });
+  const notePath = join(dir, `${dateStr}.md`);
+
+  // Create the daily note with minimal frontmatter if it doesn't exist yet.
+  if (!existsSync(notePath)) {
+    const fm = `---\ntype: daily\ntags:\n  - daily\ncreated: ${dateStr}\n---\n\n# ${dateStr}\n`;
+    await writeFile(notePath, fm, 'utf-8');
+  }
+
+  // Append the digest under a timestamped heading.
+  const stamp = now.toTimeString().slice(0, 5);
+  const block = `\n${heading} (${stamp})\n\n${text.trim()}\n`;
+  await appendFile(notePath, block, 'utf-8');
+  return notePath;
+}
+
 // -- Main --------------------------------------------------------------------
 
 async function main() {
@@ -166,6 +203,17 @@ async function main() {
   if (!digestText || digestText.trim().length === 0) {
     console.log(JSON.stringify({ status: 'skipped', reason: 'Empty digest text' }));
     return;
+  }
+
+  // Obsidian archive — runs independently of IM delivery (archive first so a
+  // push failure never costs you the archive). Uses stderr to keep stdout clean.
+  if (config.obsidian && config.obsidian.enabled) {
+    try {
+      const notePath = await appendObsidian(digestText, config.obsidian);
+      console.error(`✓ Obsidian: appended digest to ${notePath}`);
+    } catch (e) {
+      console.error(`✗ Obsidian archive failed: ${e.message}`);
+    }
   }
 
   try {
